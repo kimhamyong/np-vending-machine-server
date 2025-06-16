@@ -14,6 +14,9 @@ services:
       - ./config/proxy-config.json:/app/config.json
       - ./data/proxy:/app/data
     restart: always
+    extra_hosts:
+      - "server-1:127.0.0.1"
+      - "server-2:127.0.0.1"
 
   server-1:
     build:
@@ -28,6 +31,7 @@ services:
       - ./config/server-1-config.json:/app/config.json
       - ./data/server1:/app/data
     restart: always
+    hostname: server-1
 
   server-2:
     build:
@@ -42,6 +46,7 @@ services:
       - ./config/server-2-config.json:/app/config.json
       - ./data/server2:/app/data
     restart: always
+    hostname: server-2
 
   backup-server:
     build:
@@ -50,9 +55,10 @@ services:
       args:
         TARGET: backup-server
     container_name: backup-server
-    ports:
-      - "9103:9103"
     volumes:
       - ./config/backup-config.json:/app/config.json
       - ./data/backup:/app/data
     restart: always
+    extra_hosts:
+      - "server-1:127.0.0.1"
+      - "server-2:127.0.0.1"

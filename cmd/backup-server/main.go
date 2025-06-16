@@ -2,71 +2,72 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
-	"time"
 	"sync"
+	"time"
 
 	mynet "vending-system/internal/net"
-)
-
-var (
-	statusMap map[string]*mynet.ServerStatus
-	statusMu  sync.Mutex
-	activeMap map[string]bool // 백업 리스닝 여부
 )
 
 func main() {
 	fmt.Println("Backup Server started!")
 
 	servers := []string{"server-1:9101", "server-2:9102"}
-	statusMap = mynet.HealthCheck(servers, 5*time.Second)
-	activeMap = make(map[string]bool)
+	statusMap := mynet.HealthCheck(servers, 5*time.Second)
+
+	var mu sync.Mutex
+	activeListeners := make(map[string]net.Listener)
 
 	for {
-		for addr, s := range statusMap {
-			statusMu.Lock()
-			if !s.Alive && !activeMap[addr] {
-				fmt.Printf("[Backup] 감지: %s 다운됨, 백업 리스닝 시작\n", addr)
-				go startBackupServer(addr)
-				activeMap[addr] = true
+		for addr, status := range statusMap {
+			if !status.Alive {
+				port := targetPort(addr)
+
+				mu.Lock()
+				if _, ok := activeListeners[port]; !ok {
+					go startBackupListener(port, addr, activeListeners, &mu)
+				}
+				mu.Unlock()
 			}
-			statusMu.Unlock()
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
 
-// 백업 서버가 다운된 포트에 리스닝 시작
-func startBackupServer(addr string) {
-	listener, err := net.Listen("tcp", extractPort(addr))
+func startBackupListener(port string, originAddr string, listeners map[string]net.Listener, mu *sync.Mutex) {
+	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		fmt.Printf("[Backup] 포트 리스닝 실패: %v\n", err)
+		log.Printf("[Backup] 포트 %s 리스닝 실패: %v", port, err)
 		return
 	}
-	defer listener.Close()
 
-	fmt.Printf("[Backup] 포트 %s 리스닝 시작\n", addr)
+	mu.Lock()
+	listeners[port] = listener
+	mu.Unlock()
+
+	fmt.Printf("[Backup] %s 다운됨 → 포트 %s 리스닝 시작\n", originAddr, port)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			continue
 		}
-		go handleClient(conn, addr)
+		go handleBackupConn(conn, originAddr)
 	}
 }
 
-func handleClient(conn net.Conn, from string) {
+func handleBackupConn(conn net.Conn, origin string) {
 	defer conn.Close()
 
 	buf := make([]byte, 1024)
 	n, _ := conn.Read(buf)
-	fmt.Printf("[Backup] %s → 메시지 수신: %s\n", from, string(buf[:n]))
+	fmt.Printf("[Backup] (%s 대신) 수신: %s\n", origin, string(buf[:n]))
 
-	conn.Write([]byte(fmt.Sprintf("pong from backup (replacing %s)\n", from)))
+	conn.Write([]byte(fmt.Sprintf("pong from backup (replacing %s)\n", origin)))
 }
 
-func extractPort(addr string) string {
+func targetPort(addr string) string {
 	_, port, _ := net.SplitHostPort(addr)
-	return ":" + port
+	return port
 }
