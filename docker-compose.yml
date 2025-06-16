@@ -14,9 +14,12 @@ services:
       - ./config/proxy-config.json:/app/config.json
       - ./data/proxy:/app/data
     restart: always
-    extra_hosts:
-      - "server-1:127.0.0.1"
-      - "server-2:127.0.0.1"
+    depends_on:
+      - server-1
+      - server-2
+    networks:
+      vending-net:
+        ipv4_address: 172.28.0.10
 
   server-1:
     build:
@@ -32,6 +35,12 @@ services:
       - ./data/server1:/app/data
     restart: always
     hostname: server-1
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    networks:
+      vending-net:
+        ipv4_address: 172.28.0.11
 
   server-2:
     build:
@@ -47,6 +56,12 @@ services:
       - ./data/server2:/app/data
     restart: always
     hostname: server-2
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    networks:
+      vending-net:
+        ipv4_address: 172.28.0.12
 
   backup-server:
     build:
@@ -59,6 +74,16 @@ services:
       - ./config/backup-config.json:/app/config.json
       - ./data/backup:/app/data
     restart: always
-    extra_hosts:
-      - "server-1:127.0.0.1"
-      - "server-2:127.0.0.1"
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    networks:
+      vending-net:
+        ipv4_address: 172.28.0.13
+
+networks:
+  vending-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
