@@ -1,32 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"net"
+	"log"
+	"vending-system/internal/net"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", ":9101")
+	err := net.StartServer("server-1", 9101) // server-2는 9102, backup은 9103
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	fmt.Println("Server-1 started!")
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			continue
-		}
-		go handleConn(conn)
-	}
-}
-
-func handleConn(conn net.Conn) {
-	defer conn.Close()
-
-	buf := make([]byte, 1024)
-	n, _ := conn.Read(buf)
-	fmt.Println("Server-1 received:", string(buf[:n]))
-
-	conn.Write([]byte("pong from server-1\n"))
 }
