@@ -19,7 +19,7 @@ var (
 )
 
 func main() {
-	statusMap = mynet.HealthCheck(servers, 5*time.Second)
+	statusMap = mynet.HealthCheck(servers, 10*time.Second)
 
 	listener, err := net.Listen("tcp", ":9000")
 	if err != nil {
