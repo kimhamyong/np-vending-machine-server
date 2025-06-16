@@ -4,10 +4,12 @@ services:
   proxy-server:
     build:
       context: .
-      dockerfile: cmd/proxy-server/Dockerfile
+      dockerfile: ./Dockerfile
+      args:
+        TARGET: proxy-server
     container_name: proxy-server
     ports:
-      - "9000:9000" 
+      - "9000:9000"
     volumes:
       - ./config/proxy-config.json:/app/config.json
       - ./data/proxy:/app/data
@@ -16,7 +18,9 @@ services:
   server-1:
     build:
       context: .
-      dockerfile: cmd/server-1/Dockerfile
+      dockerfile: ./Dockerfile
+      args:
+        TARGET: server-1
     container_name: server-1
     ports:
       - "9101:9101"
@@ -28,7 +32,9 @@ services:
   server-2:
     build:
       context: .
-      dockerfile: cmd/server-2/Dockerfile
+      dockerfile: ./Dockerfile
+      args:
+        TARGET: server-2
     container_name: server-2
     ports:
       - "9102:9102"
@@ -40,7 +46,9 @@ services:
   backup-server:
     build:
       context: .
-      dockerfile: cmd/backup-server/Dockerfile
+      dockerfile: ./Dockerfile
+      args:
+        TARGET: backup-server
     container_name: backup-server
     ports:
       - "9103:9103"
