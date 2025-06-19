@@ -9,9 +9,9 @@ import (
 
 // SyncCommand는 raw socket으로 주고받을 메시지 구조
 type SyncCommand struct {
-	Type byte     // 0x01: SYNC, 0x02: UPDATE, 0x03: BUY
-	ID   [16]byte // 음료 ID
-	Qty  uint16   // 수량
+    Type    byte                   // 0x01: SYNC, 0x02: UPDATE, 0x03: BUY, etc.
+    Action  string                 // 예: user_signup, user_login 등
+    Data    map[string]interface{} // 요청에 따른 동적 데이터 (예: user_id, password, 등)
 }
 
 // RawSocketSender는 raw socket으로 메시지를 보내는 구조체
