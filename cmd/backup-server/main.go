@@ -8,9 +8,14 @@ import (
 	"time"
 
 	mynet "vending-system/internal/net"
+
+	"vending-system/internal/storage"
 )
 
 func main() {
+	db := storage.InitDB("/app/data/db.sqlite3", "/app/schema.sql")
+    defer db.Close()
+
 	fmt.Println("Backup Server started!")
 
 	servers := []string{"server-1:9101", "server-2:9102"}

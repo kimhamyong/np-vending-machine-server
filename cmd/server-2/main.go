@@ -3,11 +3,14 @@ package main
 import (
 	"log"
 	"time"
-
 	"vending-system/internal/net"
+	"vending-system/internal/storage"
 )
 
 func main() {
+	db := storage.InitDB("/app/data/db.sqlite3", "/app/schema.sql")
+	defer db.Close()
+
 	err := net.StartRawListener(func(cmd net.SyncCommand) {
 		log.Printf("[SYNC] 수신된 명령: %+v", cmd)
 	})
