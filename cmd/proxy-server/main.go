@@ -10,23 +10,24 @@ import (
 	"sync"
 	"time"
 
-	mynet "vending-system/internal/net"
+	"vending-system/internal/network"
 )
 
 var (
 	servers   = []string{"server-1:9101", "server-2:9102"}
-	statusMap map[string]*mynet.ServerStatus
+	statusMap map[string]*network.ServerStatus
 	statusMu  sync.Mutex
 	rrIndex   int // 라운드로빈 인덱스
 )
 
 func main() {
-	statusMap = mynet.HealthCheck(servers, 10*time.Second)
+	// 1. 서버 상태를 주기적으로 확인
+	statusMap = network.HealthCheck(servers, 10*time.Second)
 
-	// TCP (9000)
+	// 2. TCP 프록시 서버 실행
 	go startTCPProxy()
 
-	// HTTP (8000)
+	// 3. HTTP 프록시 서버 실행
 	startHTTPProxy()
 }
 
@@ -123,6 +124,7 @@ func selectHealthyServer() string {
 	statusMu.Lock()
 	defer statusMu.Unlock()
 
+	// 라운드로빈 방식으로 서버 선택
 	for i := 0; i < len(servers); i++ {
 		idx := (rrIndex + i) % len(servers)
 		server := servers[idx]

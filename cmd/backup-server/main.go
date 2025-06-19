@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	mynet "vending-system/internal/net"
+	"vending-system/internal/network"
 
 	"vending-system/internal/storage"
 )
@@ -19,7 +19,7 @@ func main() {
 	fmt.Println("Backup Server started!")
 
 	servers := []string{"server-1:9101", "server-2:9102"}
-	statusMap := mynet.HealthCheck(servers, 10*time.Second)
+	statusMap := network.HealthCheck(servers, 10*time.Second)
 
 	var mu sync.Mutex
 	activeListeners := make(map[string]net.Listener)
