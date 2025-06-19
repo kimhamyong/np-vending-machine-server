@@ -103,6 +103,11 @@ func handleConnWithDB(conn net.Conn, name string, db *sql.DB) {
 	switch action {
 	case "user_signup":
 		response = user.HandleSignup(req, db)  // db만 전달
+		fmt.Println("Response:", string(response)) // response 값 확인
+		if string(response) == `{"success":true}` {
+    		fmt.Println("Sending sync request to server-1") // 동기화 요청 전송 로그 확인
+    		go sendSyncRequest("server-1") // 서버1에 동기화 요청
+		}
 	case "user_login":
 		response = user.HandleLogin(req, db)  // db만 전달
 	case "user_change_password":

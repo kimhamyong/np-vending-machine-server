@@ -11,8 +11,6 @@ import (
 	"database/sql"
 )
 
-var syncRequested = false // 동기화 요청을 보냈는지 확인하는 플래그
-
 func main() {
 	// DB 초기화
 	db := storage.InitDB("/app/data/db.sqlite3", "/app/schema.sql")
@@ -33,10 +31,6 @@ func main() {
 
 // 서버 실행 시 한 번만 동기화 요청을 보내는 함수
 func sendSyncRequest(name string) error {
-	// 이미 동기화 요청을 보냈다면, 다시 보내지 않도록 함
-	if syncRequested {
-		return nil
-	}
 
 	// 동기화 요청 전송
 	sender, err := network.InitRawSocketSender("127.0.0.2") // server-2 주소
@@ -51,7 +45,6 @@ func sendSyncRequest(name string) error {
 	}
 
 	log.Println("[SYNC] 요청 전송 완료")
-	syncRequested = true // 동기화 요청을 보낸 상태로 설정
 	return nil
 }
 
@@ -103,6 +96,10 @@ func handleConnWithDB(conn net.Conn, name string, db *sql.DB) {
 	switch action {
 	case "user_signup":
 		response = user.HandleSignup(req, db)  // db만 전달
+		if string(response) == `{"success":true}` {
+    		fmt.Println("Sending sync request to server-1") // 동기화 요청 전송 로그 확인
+    		go sendSyncRequest("server-1") // 서버1에 동기화 요청
+		}
 	case "user_login":
 		response = user.HandleLogin(req, db)  // db만 전달
 	case "user_change_password":
