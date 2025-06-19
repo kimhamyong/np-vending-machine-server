@@ -7,7 +7,8 @@ services:
         TARGET: proxy-server
     container_name: proxy-server
     ports:
-      - "9000:9000"
+      - "8000:8000"  # HTTP 요청
+      - "9000:9000"  # TCP 요청
     volumes:
       - ./config/proxy-config.json:/app/config.json
       - ./data/proxy:/app/data
