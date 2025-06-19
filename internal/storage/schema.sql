@@ -1,8 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
-  user_id INTEGER PRIMARY KEY,
-  user_name TEXT,
-  user_email TEXT,
-  user_password TEXT
+    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- 자동 증가하는 primary key
+    user_id TEXT NOT NULL UNIQUE,          -- 사용자 고유 ID (예: 이메일, 사용자명)
+    password TEXT NOT NULL                 -- 비밀번호
 );
 
 CREATE TABLE IF NOT EXISTS drinks (
