@@ -1,9 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"time"
 	"net"
+	"fmt"
+
 	"vending-system/internal/storage"
 	"encoding/json"
 	"vending-system/internal/handler/user"
@@ -11,47 +13,47 @@ import (
 	"database/sql"
 )
 
-var syncRequested = false // 동기화 요청을 보냈는지 확인하는 플래그
-
 func main() {
-	// DB 초기화
-	db := storage.InitDB("/app/data/db.sqlite3", "/app/schema.sql")
-	defer db.Close()
+	err := network.StartRawListener(func(cmd network.SyncCommand) {
+		log.Printf("[SYNC] 수신된 명령: %+v", cmd)
+	})
+	if err != nil {
+		log.Fatal("raw listener 시작 실패:", err)
+	}
 
-	// 1. 서버 실행 시 한 번만 동기화 요청
-	err := sendSyncRequest("server-1") // 최초 동기화 요청
+	// 서버 실행 시 한 번만 동기화 요청
+	err = sendSyncRequest("server-1") // 최초 동기화 요청
 	if err != nil {
 		log.Fatal("SYNC 요청 실패:", err)
 	}
 
-	// 2. 서버 실행
+	// DB 초기화
+	db := storage.InitDB("/app/data/db.sqlite3", "/app/schema.sql")
+	defer db.Close()
+
 	err = startServerWithDB("server-2", 9102, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-// 서버 실행 시 한 번만 동기화 요청을 보내는 함수
+// 동기화 요청을 보내는 함수
 func sendSyncRequest(name string) error {
-	// 이미 동기화 요청을 보냈다면, 다시 보내지 않도록 함
-	if syncRequested {
-		return nil
-	}
 
 	// 동기화 요청 전송
-	sender, err := network.InitRawSocketSender("127.0.0.1") // server-1 주소
+	time.Sleep(1 * time.Second)
+	sender, err := network.InitRawSocketSender(oppositeIP(name)) // server-1 → server-2 or vice versa
 	if err != nil {
-		return fmt.Errorf("raw socket 연결 실패: %v", err)
+		fmt.Println("raw socket 연결 실패:", err)
+		return err
 	}
-
-	// 동기화 요청을 한 번만 보내기
 	err = sender.SendCommand(network.SyncCommand{Type: 0x01})
 	if err != nil {
-		return fmt.Errorf("SYNC 요청 전송 실패: %v", err)
-	}
+		fmt.Println("SYNC 요청 실패:", err)
+		} else {
+			fmt.Println("[SYNC] 요청 전송 완료")
+		}
 
-	log.Println("[SYNC] 요청 전송 완료")
-	syncRequested = true // 동기화 요청을 보낸 상태로 설정
 	return nil
 }
 
@@ -103,7 +105,6 @@ func handleConnWithDB(conn net.Conn, name string, db *sql.DB) {
 	switch action {
 	case "user_signup":
 		response = user.HandleSignup(req, db)  // db만 전달
-		fmt.Println("Response:", string(response)) // response 값 확인
 		if string(response) == `{"success":true}` {
     		fmt.Println("Sending sync request to server-1") // 동기화 요청 전송 로그 확인
     		go sendSyncRequest("server-1") // 서버1에 동기화 요청
@@ -119,4 +120,11 @@ func handleConnWithDB(conn net.Conn, name string, db *sql.DB) {
 	}
 
 	conn.Write(response)
+}
+
+func oppositeIP(name string) string {
+	if name == "server-1" {
+		return "127.0.0.2" // server-2 주소
+	}
+	return "127.0.0.1" // server-1 주소
 }

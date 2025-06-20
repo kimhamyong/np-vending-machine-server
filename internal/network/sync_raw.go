@@ -52,6 +52,9 @@ func StartRawListener(handler func(cmd SyncCommand)) error {
 		return fmt.Errorf("raw 수신 socket 생성 실패: %v", err)
 	}
 
+	// 소켓을 닫을 때 호출될 수 있도록 defer 사용
+	defer syscall.Close(fd)
+
 	go func() {
 		for {
 			buf := make([]byte, 1500)
@@ -70,6 +73,7 @@ func StartRawListener(handler func(cmd SyncCommand)) error {
 
 	return nil
 }
+
 
 // ↓↓↓ Helper Functions ↓↓↓
 
