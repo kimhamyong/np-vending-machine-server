@@ -17,7 +17,7 @@ type LoginResponse struct {
 func HandleLogin(req map[string]interface{}, db *sql.DB) []byte {
     log.Printf("[Login] 요청 값: %+v\n", req)
 
-    userid, ok1 := req["userid"].(string)
+    userid, ok1 := req["user_id"].(string)
     password, ok2 := req["password"].(string)
     if !ok1 || !ok2 {
         resp := LoginResponse{Success: false, Error: "필드 누락 또는 형식 오류"}

@@ -10,6 +10,7 @@ type Repository interface {
     Create(user model.User) error
     ExistsByUserID(userid string) (bool, error)
     FindByUserID(userid string) (string, error)
+    UpdatePassword(userid string, newPassword string) error
 }
 
 type repoImpl struct {
@@ -41,4 +42,9 @@ func (r *repoImpl) FindByUserID(userid string) (string, error) {
         return "", err
     }
     return password, nil
+}
+
+func (r *repoImpl) UpdatePassword(userid string, hashedPassword string) error {
+	_, err := r.db.Exec(`UPDATE users SET password = ? WHERE user_id = ?`, hashedPassword, userid)
+	return err
 }
