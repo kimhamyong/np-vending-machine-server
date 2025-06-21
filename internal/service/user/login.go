@@ -3,8 +3,7 @@ package user
 import (
     "errors"
     "vending-system/internal/repository/user"
-	"fmt"
-
+	
     "golang.org/x/crypto/bcrypt"
 )
 

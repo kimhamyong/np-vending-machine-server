@@ -11,6 +11,7 @@ type Repository interface {
     ExistsByUserID(userid string) (bool, error)
     FindByUserID(userid string) (string, error)
     UpdatePassword(userid string, newPassword string) error
+    DeleteByUserID(userid string) error
 }
 
 type repoImpl struct {
@@ -46,5 +47,10 @@ func (r *repoImpl) FindByUserID(userid string) (string, error) {
 
 func (r *repoImpl) UpdatePassword(userid string, hashedPassword string) error {
 	_, err := r.db.Exec(`UPDATE users SET password = ? WHERE user_id = ?`, hashedPassword, userid)
+	return err
+}
+
+func (r *repoImpl) DeleteByUserID(userid string) error {
+	_, err := r.db.Exec(`DELETE FROM users WHERE user_id = ?`, userid)
 	return err
 }
