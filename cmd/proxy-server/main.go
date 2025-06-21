@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	servers   = []string{"server-1:9101", "server-2:9102"}
+	servers   = []string{"localhost:9101", "server-2:9102"} //여기 도커로 할 땐 변경할 것
 	statusMap map[string]*network.ServerStatus
 	statusMu  sync.Mutex
 	rrIndex   int // 라운드로빈 인덱스
@@ -89,17 +89,13 @@ func forwardTCP(clientConn net.Conn) {
 }
 
 func startHTTPProxy() {
-    // 각 API 핸들러에 CORS 미들웨어 적용
-    http.HandleFunc("/api/user_login", corsMiddleware(httpToTCPHandler("user_login")))
-    http.HandleFunc("/api/user_signup", corsMiddleware(httpToTCPHandler("user_signup")))
-    http.HandleFunc("/api/user_change_password", corsMiddleware(httpToTCPHandler("user_change_password")))
-    http.HandleFunc("/api/user_delete_account", corsMiddleware(httpToTCPHandler("user_delete_account")))
+	http.HandleFunc("/api/", corsMiddleware(httpToTCPHandler()))
 
-    fmt.Println("Proxy HTTP Server started! Listening on :8000")
-    log.Fatal(http.ListenAndServe(":8000", nil))
+	fmt.Println("Proxy HTTP Server started! Listening on :8000")
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
-func httpToTCPHandler(action string) http.HandlerFunc {
+func httpToTCPHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -114,7 +110,6 @@ func httpToTCPHandler(action string) http.HandlerFunc {
 			http.Error(w, "JSON 파싱 실패", http.StatusBadRequest)
 			return
 		}
-		req["action"] = action
 
 		target := selectHealthyServer()
 		if target == "" {
