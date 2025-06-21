@@ -31,8 +31,7 @@ services:
       - "9101:9101"
     volumes:
       - ./config/server-1-config.json:/app/config.json
-      - ./data/server1:/app/data
-      - ./internal/storage/schema.sql:/app/schema.sql
+      - ./data/shared-database:/app/data   # SQLite 파일 공유
     restart: always
     hostname: server-1
     cap_add:
@@ -53,8 +52,7 @@ services:
       - "9102:9102"
     volumes:
       - ./config/server-2-config.json:/app/config.json
-      - ./data/server2:/app/data
-      - ./internal/storage/schema.sql:/app/schema.sql
+      - ./data/shared-database:/app/data   # SQLite 파일 공유
     restart: always
     hostname: server-2
     cap_add:

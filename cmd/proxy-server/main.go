@@ -31,6 +31,25 @@ func main() {
 	startHTTPProxy()
 }
 
+// CORS 미들웨어 추가
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // CORS 헤더 설정
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+        w.Header().Set("Access-Control-Allow-Methods", "*")
+        w.Header().Set("Access-Control-Allow-Headers", "*")
+        w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+        // OPTIONS 요청 처리
+        if r.Method == "OPTIONS" {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+
+        next(w, r) // 실제 핸들러 실행
+    }
+}
+
 func startTCPProxy() {
 	listener, err := net.Listen("tcp", ":9000")
 	if err != nil {
@@ -70,13 +89,14 @@ func forwardTCP(clientConn net.Conn) {
 }
 
 func startHTTPProxy() {
-	http.HandleFunc("/api/user_login", httpToTCPHandler("user_login"))
-	http.HandleFunc("/api/user_signup", httpToTCPHandler("user_signup"))
-	http.HandleFunc("/api/user_change_password", httpToTCPHandler("user_change_password"))
-	http.HandleFunc("/api/user_delete_account", httpToTCPHandler("user_delete_account"))
+    // 각 API 핸들러에 CORS 미들웨어 적용
+    http.HandleFunc("/api/user_login", corsMiddleware(httpToTCPHandler("user_login")))
+    http.HandleFunc("/api/user_signup", corsMiddleware(httpToTCPHandler("user_signup")))
+    http.HandleFunc("/api/user_change_password", corsMiddleware(httpToTCPHandler("user_change_password")))
+    http.HandleFunc("/api/user_delete_account", corsMiddleware(httpToTCPHandler("user_delete_account")))
 
-	fmt.Println("Proxy HTTP Server started! Listening on :8000")
-	log.Fatal(http.ListenAndServe(":8000", nil))
+    fmt.Println("Proxy HTTP Server started! Listening on :8000")
+    log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
 func httpToTCPHandler(action string) http.HandlerFunc {
