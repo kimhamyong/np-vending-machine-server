@@ -3,11 +3,13 @@ package user
 import (
     "database/sql"
     "vending-system/internal/model/user"
+    "errors"
 )
 
 type Repository interface {
     Create(user model.User) error
     ExistsByUserID(userid string) (bool, error)
+    FindByUserID(userid string) (string, error)
 }
 
 type repoImpl struct {
@@ -27,4 +29,16 @@ func (r *repoImpl) ExistsByUserID(userid string) (bool, error) {
     var count int
     err := r.db.QueryRow(`SELECT COUNT(*) FROM users WHERE user_id = ?`, userid).Scan(&count)
     return count > 0, err
+}
+
+func (r *repoImpl) FindByUserID(userid string) (string, error) {
+    var password string
+    err := r.db.QueryRow("SELECT password FROM users WHERE user_id = ?", userid).Scan(&password)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return "", errors.New("존재하지 않는 사용자입니다")
+        }
+        return "", err
+    }
+    return password, nil
 }
